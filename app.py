@@ -1,9 +1,7 @@
 import streamlit as st
 
 # Page settings
-st.set_page_config(page_title="Group project MC - O31
-ITIB4114-BUSINESS INTELLIGENCE
-", layout="wide")
+st.set_page_config(page_title="GROUP PROJECT BUSINESS INTELLIGENCE", layout="wide")
 
 # Title
 st.title("COVID-19 Data visualization and forcast ")
