@@ -7,7 +7,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 # Load Data Function
 # --------------------
 @st.cache_data
-def load_data(file_path="covid_data.xlsx"):
+def load_data(file_path="covidnewdata-2020-2022.xlsx"):
     df = pd.read_excel(file_path)
     df["date"] = pd.to_datetime(df["date"])
     return df
