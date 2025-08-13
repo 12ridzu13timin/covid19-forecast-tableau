@@ -41,14 +41,14 @@ years = st.sidebar.multiselect(
     options=df["date"].dt.year.unique(),
     default=df["date"].dt.year.unique()
 )
-regions = st.sidebar.multiselect(
-    "Select Region(s):",
-    options=df["region"].unique(),
-    default=df["region"].unique()
-)
 
+states = st.sidebar.multiselect(
+    "Select State(s):",
+    options=df["state"].unique(),
+    default=df["state"].unique()
+)
 # Filtered data
-filtered_df = df[df["date"].dt.year.isin(years) & df["region"].isin(regions)]
+filtered_df = df[df["date"].dt.year.isin(years) & df["state"].isin(states)]
 
 # --------------------
 # General Information Box
@@ -56,9 +56,9 @@ filtered_df = df[df["date"].dt.year.isin(years) & df["region"].isin(regions)]
 with st.container():
     st.subheader("ℹ General COVID-19 Information")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Cases", f"{filtered_df['total_cases'].sum():,}")
-    col2.metric("Total Deaths", f"{filtered_df['total_deaths'].sum():,}")
-    col3.metric("Total Recovered", f"{filtered_df['total_recovered'].sum():,}")
+col1.metric("Total Cases", f"{filtered_df['cases_new'].sum():,}")
+col2.metric("Total Deaths", f"{filtered_df['deaths_new'].sum():,}")
+col3.metric("Total Recovered", f"{filtered_df['cases_recovered'].sum():,}")
 
 # --------------------
 # Cases Over Time
