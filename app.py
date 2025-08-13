@@ -1,63 +1,96 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
-# Page settings
-st.set_page_config(page_title="GROUP PROJECT BUSINESS INTELLIGENCE", layout="wide")
+# --------------------
+# Load Data Function
+# --------------------
+@st.cache_data
+def load_data(file_path="covid_data.xlsx"):
+    df = pd.read_excel(file_path)
+    df["date"] = pd.to_datetime(df["date"])
+    return df
 
-# Title
-st.title("COVID-19 Data visualization and forcast ")
+# --------------------
+# Forecast Function
+# --------------------
+def forecast_cases(df, periods=30):
+    df = df.groupby("date")["total_cases"].sum().reset_index()
+    df = df.sort_values("date")
+    model = ExponentialSmoothing(df["total_cases"], trend="add", seasonal=None)
+    fit = model.fit()
+    forecast_values = fit.forecast(periods)
+    forecast_dates = pd.date_range(start=df["date"].iloc[-1] + pd.Timedelta(days=1), periods=periods)
+    forecast_df = pd.DataFrame({"date": forecast_dates, "forecast_total_cases": forecast_values})
+    return forecast_df
 
-# Section: Group Members
-st.header(" Group 5 Members")
-group_members = [
-    "1. CATHERINE ROSEY A/P PRAK CHUAB ",
-    "2. MUHAMMAD LUKMAN BIN ROSDIN",
-    "3. TRERAAJESREE A/P MANI DHANAPALAN",
-    "4. MUHAMMAD RIDZUAN BIN SUTIMIN "
-]
-for member in group_members:
-    st.write(member)
+# --------------------
+# Streamlit Layout
+# --------------------
+st.set_page_config(page_title="COVID-19 Dashboard", layout="wide")
+st.title("📊 COVID-19 Dashboard with Forecasting")
 
-# Section: General Information with Crisis & Losses
-st.header("ℹ General Information about COVID-19")
-st.markdown("""
-COVID-19 is a respiratory illness caused by the SARS-CoV-2 virus.  
-It was first identified in December 2019 and quickly spread worldwide, leading to a global pandemic.  
+# Load data
+df = load_data()
 
-Common symptoms include fever, cough, fatigue, and difficulty breathing.  
-Prevention measures include wearing masks, maintaining physical distancing, frequent handwashing,  
-and vaccination to reduce severe illness and death.
+# Sidebar filters
+st.sidebar.header("Filter Data")
+years = st.sidebar.multiselect(
+    "Select Year(s):",
+    options=df["date"].dt.year.unique(),
+    default=df["date"].dt.year.unique()
+)
+regions = st.sidebar.multiselect(
+    "Select Region(s):",
+    options=df["region"].unique(),
+    default=df["region"].unique()
+)
 
----
+# Filtered data
+filtered_df = df[df["date"].dt.year.isin(years) & df["region"].isin(regions)]
 
-### 🆘  what covid had cause in Malaysia
-- **Healthcare System Overload:** Hospitals, ICUs, and quarantine centres reached maximum capacity, forcing the setup of field hospitals and the mobilisation of army medical teams.
-- **Economic Shutdowns:** Movement Control Orders (MCOs) repeatedly halted economic activities, causing massive disruption to SMEs, tourism, and manufacturing sectors.
-- **Education Disruption:** Millions of students had to shift to online learning, exposing the digital divide between urban and rural areas.
-- **Supply Chain Disruptions:** Shortages of medical supplies, PPE, oxygen tanks, and essential goods in certain regions.
-- **Mental Health Strain:** Increased cases of depression, anxiety, and even suicide rates due to job losses, financial stress, and social isolation.
+# --------------------
+# General Information Box
+# --------------------
+with st.container():
+    st.subheader("ℹ General COVID-19 Information")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Cases", f"{filtered_df['total_cases'].sum():,}")
+    col2.metric("Total Deaths", f"{filtered_df['total_deaths'].sum():,}")
+    col3.metric("Total Recovered", f"{filtered_df['total_recovered'].sum():,}")
 
----
+# --------------------
+# Cases Over Time
+# --------------------
+with st.container():
+    st.subheader("📈 Total Cases Over Time")
+    fig_cases = px.line(
+        filtered_df.groupby("date")["total_cases"].sum().reset_index(),
+        x="date",
+        y="total_cases",
+        title="Total COVID-19 Cases Over Time"
+    )
+    st.plotly_chart(fig_cases, use_container_width=True)
 
-### 💔 Losses Faced in Malaysia
-- **Human Loss:** Over 36,000 deaths recorded as of 2023, with thousands more suffering from long COVID symptoms.
-- **Economic Loss:** Estimated RM500 billion in economic output lost between 2020–2022 due to lockdowns and reduced productivity.
-- **Employment Loss:** Unemployment peaked at around 5.3% in May 2020, with many in tourism, retail, and F&B sectors severely affected.
-- **Social & Cultural Loss:** Suspension of Hari Raya, Chinese New Year, Deepavali gatherings; cancellation of weddings and public events.
-- **Educational Loss:** Learning gaps widened, with some students losing more than a year of effective education.
+# --------------------
+# Forecast Section
+# --------------------
+with st.container():
+    st.subheader("🔮 Forecasted Total Cases")
+    forecast_df = forecast_cases(filtered_df)
+    fig_forecast = px.line(forecast_df, x="date", y="forecast_total_cases", title="Forecasted Total Cases (Next 30 Days)")
+    st.plotly_chart(fig_forecast, use_container_width=True)
 
----
-
-This dashboard aims to visualise the timeline and severity of these impacts, helping us understand the broader picture of the pandemic in Malaysia.
-""")
-
-# Section: Image from Repo
-st.header("🖼 COVID-19 forcast")
-st.image("images/forcast .png", caption="Global COVID-19 Map", use_column_width=True)
-
-# Tableau Dashboard Embed
-st.header(" Data dashboard")
-tableau_embed_code = """
-<iframe src="<div class='tableauPlaceholder' id='viz1754984144511' style='position: relative'><noscript><a href='#'><img alt=' ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17548411159820&#47;Dashboard1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz'  style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='embed_code_version' value='3' /> <param name='site_root' value='' /><param name='name' value='Book1_17548411159820&#47;Dashboard1' /><param name='tabs' value='yes' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17548411159820&#47;Dashboard1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='language' value='en-US' /></object></div>                <script type='text/javascript'>                    var divElement = document.getElementById('viz1754984144511');                    var vizElement = divElement.getElementsByTagName('object')[0];                    if ( divElement.offsetWidth > 800 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='610px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} else if ( divElement.offsetWidth > 500 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='610px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} else { vizElement.style.width='100%';vizElement.style.minHeight='1700px';vizElement.style.maxHeight=(divElement.offsetWidth*1.77)+'px';}                     var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);                </script>"
-width="100%" height="800px"></iframe>
-"""
-st.markdown(tableau_embed_code, unsafe_allow_html=True)
+# --------------------
+# Cases by Region
+# --------------------
+with st.container():
+    st.subheader("🌍 Cases by Region")
+    fig_region = px.bar(
+        filtered_df.groupby("region")["total_cases"].sum().reset_index(),
+        x="region",
+        y="total_cases",
+        title="Total Cases by Region"
+    )
+    st.plotly_chart(fig_region, use_container_width=True)
