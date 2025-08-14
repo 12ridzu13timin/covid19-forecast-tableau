@@ -63,8 +63,11 @@ def holt_winters_forecast(y: pd.Series, periods: int = 30):
 # =========================
 # Page Config
 # =========================
-st.set_page_config(page_title="COVID-19 Dashboard", layout="wide")
-st.title(" COVID-19 Dashboard (2020–2022) ")
+st.set_page_config(
+    page_title="MC-O31 Group 5 | COVID-19 Dashboard (2020–2022)",
+    layout="wide"
+)
+st.title("MC-O31 Group 5 COVID-19 Dashboard — Forecast & Analysis (2020–2022)")
 
 # =========================
 # Load Data
@@ -84,11 +87,10 @@ df = load_data()  # uses your local/Repo file
 # =========================
 with st.sidebar:
     st.header("MC - O31 ITIB4114-BUSINESS INTELLIGENCE-MAY 2025")
-    st.markdown(
-        "- **group 5 project ).\n"
-        "- “ covid 19 data visualization dashboard. .\n"
-        "-  COVID-19 is an infectious disease caused by the SARS-CoV-2 virus.First identified in december 2019, it has caused a global pandemic.Symptoms range from mild to severe and include fever, cough, and breathing difficulties.Preventive measures include vaccination, mask-wearing, and social distancing."
-    )
+   st.markdown("""
+**Welcome to our COVID-19 Dashboard.**  
+This dashboard presents **Malaysia’s COVID-19 cases (2020–2022)** with interactive charts and a 30-day forecast using Holt-Winters Exponential Smoothing.  
+""")
     st.divider()
     st.header(" Filters")
 
