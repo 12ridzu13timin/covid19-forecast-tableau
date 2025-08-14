@@ -87,10 +87,7 @@ with st.sidebar:
     st.markdown(
         "- **group 5 project ).\n"
         "- “ covid 19 data visualization dashboard. .\n"
-        "-     COVID-19 is an infectious disease caused by the SARS-CoV-2 virus.  
-    First identified in December 2019, it has caused a global pandemic.  
-    Symptoms range from mild to severe and include fever, cough, and breathing difficulties.  
-    Preventive measures include vaccination, mask-wearing, and social distancing."
+        "-  COVID-19 is an infectious disease caused by the SARS-CoV-2 virus.First identified in december 2019, it has caused a global pandemic.Symptoms range from mild to severe and include fever, cough, and breathing difficulties.Preventive measures include vaccination, mask-wearing, and social distancing."
     )
     st.divider()
     st.header("🔎 Filters")
