@@ -9,88 +9,107 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 @st.cache_data
 def load_data(file_path="covidnewdata-2020-2022.xlsx"):
     df = pd.read_excel(file_path)
-    df["date"] = pd.to_datetime(df["date"])
+
+    # Clean column names to avoid KeyError
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
+        .str.replace("-", "_")
+    )
+
+    # Ensure date column is datetime
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
     return df
 
 # --------------------
 # Forecast Function
 # --------------------
-def forecast_cases(df, periods=30):
-    df = df.groupby("date")["total_cases"].sum().reset_index()
-    df = df.sort_values("date")
-    model = ExponentialSmoothing(df["total_cases"], trend="add", seasonal=None)
+def forecast_cases(data, periods=30):
+    model = ExponentialSmoothing(
+        data["total_cases"], 
+        trend="add", 
+        seasonal=None
+    )
     fit = model.fit()
-    forecast_values = fit.forecast(periods)
-    forecast_dates = pd.date_range(start=df["date"].iloc[-1] + pd.Timedelta(days=1), periods=periods)
-    forecast_df = pd.DataFrame({"date": forecast_dates, "forecast_total_cases": forecast_values})
-    return forecast_df
+    forecast = fit.forecast(periods)
+    return forecast
 
 # --------------------
-# Streamlit Layout
+# Streamlit UI
 # --------------------
-st.set_page_config(page_title="COVID-19 Dashboard", layout="wide")
-st.title("📊 COVID-19 Dashboard with Forecasting")
+st.set_page_config(page_title="COVID-19 Forecast Dashboard", layout="wide")
+st.title("📊 COVID-19 Forecast Dashboard")
 
-# Load data
+# Load dataset
 df = load_data()
 
-# Sidebar filters
+# --- Sidebar Filters ---
 st.sidebar.header("Filter Data")
+states = st.sidebar.multiselect(
+    "Select State(s):", 
+    options=df["state"].unique(), 
+    default=df["state"].unique()
+)
+
 years = st.sidebar.multiselect(
     "Select Year(s):",
     options=df["date"].dt.year.unique(),
     default=df["date"].dt.year.unique()
 )
 
-states = st.sidebar.multiselect(
-    "Select State(s):",
-    options=df["state"].unique(),
-    default=df["state"].unique()
-)
-# Filtered data
-filtered_df = df[df["date"].dt.year.isin(years) & df["state"].isin(states)]
+filtered_df = df[
+    df["state"].isin(states) & 
+    df["date"].dt.year.isin(years)
+]
 
 # --------------------
-# General Information Box
+# Section 1: Data Overview
 # --------------------
 with st.container():
-    st.subheader("ℹ General COVID-19 Information")
-    col1, col2, col3 = st.columns(3)
-col1.metric("Total Cases", f"{filtered_df['cases_new'].sum():,}")
-col2.metric("Total Deaths", f"{filtered_df['deaths_new'].sum():,}")
-col3.metric("Total Recovered", f"{filtered_df['cases_recovered'].sum():,}")
+    st.subheader("📋 Data Overview")
+    st.dataframe(filtered_df)
 
 # --------------------
-# Cases Over Time
+# Section 2: Cases Over Time
 # --------------------
 with st.container():
     st.subheader("📈 Total Cases Over Time")
-    fig_cases = px.line(
-        filtered_df.groupby("date")["total_cases"].sum().reset_index(),
-        x="date",
-        y="total_cases",
-        title="Total COVID-19 Cases Over Time"
-    )
-    st.plotly_chart(fig_cases, use_container_width=True)
+    if "total_cases" in filtered_df.columns:
+        fig_cases = px.line(
+            filtered_df.groupby("date")["total_cases"].sum().reset_index(),
+            x="date", y="total_cases", title="Total COVID-19 Cases Over Time"
+        )
+        st.plotly_chart(fig_cases, use_container_width=True)
+    else:
+        st.error("Column 'total_cases' not found in dataset.")
 
 # --------------------
-# Forecast Section
+# Section 3: Forecast
 # --------------------
 with st.container():
-    st.subheader("🔮 Forecasted Total Cases")
-    forecast_df = forecast_cases(filtered_df)
-    fig_forecast = px.line(forecast_df, x="date", y="forecast_total_cases", title="Forecasted Total Cases (Next 30 Days)")
-    st.plotly_chart(fig_forecast, use_container_width=True)
+    st.subheader("🔮 30-Day Forecast")
+    if "total_cases" in filtered_df.columns:
+        grouped_data = filtered_df.groupby("date")["total_cases"].sum().reset_index()
+        forecast_data = forecast_cases(grouped_data, periods=30)
+
+        forecast_df = pd.DataFrame({
+            "date": pd.date_range(start=grouped_data["date"].max() + pd.Timedelta(days=1), periods=30),
+            "forecast_cases": forecast_data
+        })
+
+        fig_forecast = px.line(forecast_df, x="date", y="forecast_cases", title="30-Day Forecast of Cases")
+        st.plotly_chart(fig_forecast, use_container_width=True)
+    else:
+        st.error("Column 'total_cases' not found in dataset.")
 
 # --------------------
-# Cases by Region
+# Section 4: Raw Data Download
 # --------------------
 with st.container():
-    st.subheader("🌍 Cases by Region")
-    fig_region = px.bar(
-        filtered_df.groupby("region")["total_cases"].sum().reset_index(),
-        x="region",
-        y="total_cases",
-        title="Total Cases by Region"
-    )
-    st.plotly_chart(fig_region, use_container_width=True)
+    st.subheader("⬇️ Download Filtered Data")
+    csv = filtered_df.to_csv(index=False).encode("utf-8")
+    st.download_button("Download CSV", csv, "filtered_covid_data.csv", "text/csv")
