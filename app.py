@@ -64,7 +64,7 @@ def holt_winters_forecast(y: pd.Series, periods: int = 30):
 # Page Config
 # =========================
 st.set_page_config(page_title="COVID-19 Dashboard", layout="wide")
-st.title("🇲🇾 COVID-19 Dashboard (2020–2022) — Trends & Forecasts")
+st.title(" COVID-19 Dashboard (2020–2022) ")
 
 # =========================
 # Load Data
@@ -83,11 +83,14 @@ df = load_data()  # uses your local/Repo file
 # Sidebar
 # =========================
 with st.sidebar:
-    st.header("ℹ️ About & Tips")
+    st.header("MC - O31 ITIB4114-BUSINESS INTELLIGENCE-MAY 2025")
     st.markdown(
-        "- **Cases** are daily new cases (`cases_new`).\n"
-        "- “Total cases” chart is **cumulative** sum of daily new cases.\n"
-        "- Forecast uses **Holt–Winters (ETS)** on daily cases."
+        "- **group 5 project ).\n"
+        "- “ covid 19 data visualization dashboard. .\n"
+        "-     COVID-19 is an infectious disease caused by the SARS-CoV-2 virus.  
+    First identified in December 2019, it has caused a global pandemic.  
+    Symptoms range from mild to severe and include fever, cough, and breathing difficulties.  
+    Preventive measures include vaccination, mask-wearing, and social distancing."
     )
     st.divider()
     st.header("🔎 Filters")
@@ -118,7 +121,7 @@ if states:
 # =========================
 # KPIs
 # =========================
-st.subheader("📊 Key Metrics")
+st.subheader(" summary ")
 if flt.empty or "cases_new" not in flt.columns:
     st.warning("No data after filtering, or `cases_new` column missing.")
 else:
@@ -137,14 +140,14 @@ else:
 if not flt.empty and "cases_new" in flt.columns:
     c1, c2 = st.columns(2)
     with c1:
-        st.subheader("🦠 Daily New Cases (by State)")
+        st.subheader(" Daily New Cases by State")
         st.plotly_chart(
             px.line(flt.sort_values("date"), x="date", y="cases_new", color="state",
                     labels={"cases_new":"New Cases","date":"Date","state":"State"}),
             use_container_width=True
         )
     with c2:
-        st.subheader("💀 Daily New Deaths (by State)")
+        st.subheader(" Daily New Deaths by State")
         if "deaths_new" in flt.columns:
             st.plotly_chart(
                 px.line(flt.sort_values("date"), x="date", y="deaths_new", color="state",
@@ -154,7 +157,7 @@ if not flt.empty and "cases_new" in flt.columns:
         else:
             st.info("No `deaths_new` column in this dataset.")
 
-    st.subheader("🏛 Totals by State (current filter)")
+    st.subheader("Totals by State ")
     if "state" in flt.columns:
         totals = flt.groupby("state", as_index=False)["cases_new"].sum()
         st.plotly_chart(
@@ -165,7 +168,7 @@ if not flt.empty and "cases_new" in flt.columns:
         )
 
     # ---- Total Cases Over Time (CUMULATIVE from daily) ----
-    st.subheader("📈 Total Cases Over Time (Cumulative)")
+    st.subheader(" Total sum  Cases Over Time ")
     daily = daily_series(flt, "cases_new")
     daily["total_cases_cum"] = daily["cases_new"].cumsum()
     st.plotly_chart(
@@ -178,7 +181,7 @@ if not flt.empty and "cases_new" in flt.columns:
 # =========================
 # Forecasts
 # =========================
-st.header("🔮 Forecasts")
+st.header(" Forecasts")
 
 if not flt.empty and "cases_new" in flt.columns:
     horizon = st.slider("Forecast horizon (days)", 14, 90, 30, step=7)
